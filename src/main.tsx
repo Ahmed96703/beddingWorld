@@ -1,0 +1,21 @@
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
+import { AuthProvider } from "@/context/auth";
+import { CurrencyProvider } from "@/context/currency";
+import { Toaster } from "@/components/ui/sonner";
+import "./index.css";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <CurrencyProvider>
+          <App />
+          <Toaster />
+        </CurrencyProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  </StrictMode>,
+);
