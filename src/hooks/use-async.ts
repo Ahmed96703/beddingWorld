@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { normalizeError } from "@/lib/utils";
 
 export interface AsyncState<T> {
   data: T | undefined;
@@ -40,7 +41,7 @@ export function useAsync<T>(
       })
       .catch((err: unknown) => {
         if (active && mounted.current) {
-          setError(err instanceof Error ? err : new Error(String(err)));
+          setError(normalizeError(err));
         }
       })
       .finally(() => {
