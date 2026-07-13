@@ -10,7 +10,7 @@ interface SeoProps {
   noindex?: boolean;
 }
 
-const SITE = "LINÉA";
+const SITE = "Bedding World";
 const BASE_DESC =
   "Premium bedding, bath, and home textiles, thoughtfully made for everyday comfort. Cash on delivery available.";
 

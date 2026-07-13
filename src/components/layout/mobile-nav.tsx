@@ -36,7 +36,7 @@ export function MobileNav({
             onClick={onClose}
             className="mb-4 font-display text-2xl tracking-tight"
           >
-            LINÉA
+            Bedding World
           </Link>
 
           <Accordion type="multiple" className="flex-1">

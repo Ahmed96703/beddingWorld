@@ -352,7 +352,7 @@ export interface StoreSettings {
 }
 
 export const DEFAULT_SETTINGS: StoreSettings = {
-  store_name: "LINÉA",
+  store_name: "Bedding World",
   base_currency: "USD",
   auto_detect_currency: true,
   free_shipping_threshold: 120,

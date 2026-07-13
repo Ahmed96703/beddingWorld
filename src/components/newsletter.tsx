@@ -12,7 +12,7 @@ export function Newsletter() {
     <section className="border-b border-border bg-secondary/50">
       <div className="container grid items-center gap-8 py-16 md:grid-cols-2">
         <div>
-          <p className="eyebrow">The LINÉA Letter</p>
+          <p className="eyebrow">The Bedding World Letter</p>
           <h2 className="mt-3 max-w-md text-balance font-display text-3xl leading-tight md:text-4xl">
             Quiet luxury, delivered to your inbox.
           </h2>
@@ -35,7 +35,7 @@ export function Newsletter() {
                 <Check className="h-5 w-5" />
               </span>
               <p className="text-sm">
-                You're on the list. Welcome to LINÉA.
+                You're on the list. Welcome to Bedding World.
               </p>
             </div>
           ) : (

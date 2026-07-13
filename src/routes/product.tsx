@@ -112,7 +112,7 @@ export default function ProductPage() {
         title={product.name}
         description={
           product.description?.slice(0, 160) ??
-          `${product.name} — premium home textiles from LINÉA.`
+          `${product.name} — premium home textiles from Bedding World.`
         }
         image={product.images?.[0]}
         path={`/product/${product.slug}`}

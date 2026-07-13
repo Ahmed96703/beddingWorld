@@ -33,14 +33,14 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-dvh bg-secondary/30">
-      <Seo title="Admin" description="LINÉA admin dashboard" noindex />
+      <Seo title="Admin" description="Bedding World admin dashboard" noindex />
 
       <div className="flex min-h-dvh flex-col lg:flex-row">
         {/* Sidebar */}
         <aside className="flex shrink-0 flex-col border-b border-border bg-card lg:w-64 lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between p-5 lg:block">
             <Link to="/" className="font-display text-2xl tracking-tight">
-              LINÉA<span className="text-clay">.</span>
+              Bedding World<span className="text-clay">.</span>
             </Link>
             <p className="hidden text-xs uppercase tracking-widest2 text-muted-foreground lg:mt-1 lg:block">
               Admin Console

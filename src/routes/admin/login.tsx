@@ -81,14 +81,14 @@ export default function AdminLoginPage() {
 
   return (
     <div className="grid min-h-dvh place-items-center bg-secondary/30 px-5 py-12">
-      <Seo title="Admin Login" description="Sign in to the LINÉA admin console." noindex />
+      <Seo title="Admin Login" description="Sign in to the Bedding World admin console." noindex />
 
       <div className="w-full max-w-md">
         <Link
           to="/"
           className="mb-8 block text-center font-display text-3xl tracking-tight"
         >
-          LINÉA<span className="text-clay">.</span>
+          Bedding World<span className="text-clay">.</span>
         </Link>
 
         <div className="rounded-2xl border border-border bg-card p-8 shadow-soft">

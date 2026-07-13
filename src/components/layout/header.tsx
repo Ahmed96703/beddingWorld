@@ -86,7 +86,7 @@ export function Header() {
               to="/"
               className="font-display text-2xl leading-none tracking-tight xl:text-[1.7rem]"
             >
-              LINÉA
+              Bedding World
               <span className="ml-0.5 align-super text-clay">.</span>
             </Link>
           </div>

@@ -14,7 +14,7 @@ export function Footer() {
       <div className="container grid gap-10 py-16 md:grid-cols-2 lg:grid-cols-[1.4fr_repeat(4,1fr)]">
         <div className="max-w-xs">
           <Link to="/" className="font-display text-2xl tracking-tight">
-            LINÉA<span className="text-clay">.</span>
+            Bedding World<span className="text-clay">.</span>
           </Link>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
             Premium bedding and home textiles, designed to make the everyday
@@ -78,7 +78,7 @@ export function Footer() {
 
       <div className="border-t border-border/70">
         <div className="container flex flex-col items-center justify-between gap-3 py-6 text-xs text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} LINÉA. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Bedding World. All rights reserved.</p>
           <p className="flex items-center gap-4">
             <span>Cash on Delivery</span>
             <span aria-hidden>·</span>

@@ -134,7 +134,7 @@ export default function SubCategoryPage() {
         title={`${subCategory.name} · ${parent.name}`}
         description={
           subCategory.description ??
-          `Shop ${subCategory.name.toLowerCase()} in our ${parent.name.toLowerCase()} collection at LINÉA.`
+          `Shop ${subCategory.name.toLowerCase()} in our ${parent.name.toLowerCase()} collection at Bedding World.`
         }
         image={subCategory.image_url ?? undefined}
         path={`/category/${parent.slug}/${subCategory.slug}`}

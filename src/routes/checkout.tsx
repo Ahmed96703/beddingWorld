@@ -99,7 +99,7 @@ export default function CheckoutPage() {
 
   return (
     <>
-      <Seo title="Checkout" description="Complete your LINÉA order with cash on delivery." path="/checkout" noindex />
+      <Seo title="Checkout" description="Complete your Bedding World order with cash on delivery." path="/checkout" noindex />
 
       <div className="container py-12 md:py-16">
         <h1 className="font-display text-4xl md:text-5xl">Checkout</h1>

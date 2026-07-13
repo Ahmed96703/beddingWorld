@@ -81,7 +81,7 @@ export default function AdminSettings() {
               <Input
                 value={form.store_name}
                 onChange={(e) => set("store_name", e.target.value)}
-                placeholder="LINÉA"
+                placeholder="Bedding World"
               />
             </div>
           </section>

@@ -32,8 +32,8 @@ export default function HomePage() {
   return (
     <>
       <Seo
-        title="LINÉA — Premium Bedding & Home"
-        description="Discover premium bedding, bath, and home textiles at LINÉA. Sheets, comforters, quilts, towels and more — with cash on delivery."
+        title="Bedding World — Premium Bedding & Home"
+        description="Discover premium bedding, bath, and home textiles at Bedding World. Sheets, comforters, quilts, towels and more — with cash on delivery."
         path="/"
       />
 

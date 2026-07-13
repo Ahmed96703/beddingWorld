@@ -53,7 +53,7 @@ export default function CategoryPage() {
         title={`${category.name} Collection`}
         description={
           category.description ??
-          `Shop premium ${category.name.toLowerCase()} at LINÉA — crafted for comfort and made to last.`
+          `Shop premium ${category.name.toLowerCase()} at Bedding World — crafted for comfort and made to last.`
         }
         image={category.image_url ?? undefined}
         path={`/category/${category.slug}`}

@@ -34,7 +34,7 @@ export function ProductImage({
         aria-label={alt}
         role="img"
       >
-        <span className="font-display text-3xl italic opacity-60">LINÉA</span>
+        <span className="font-display text-3xl italic opacity-60">Bedding World</span>
       </div>
     );
   }

@@ -17,7 +17,7 @@ export default function OrderSuccessPage() {
 
   return (
     <>
-      <Seo title="Order Confirmed" description="Your LINÉA order is confirmed." path="/order/success" noindex />
+      <Seo title="Order Confirmed" description="Your Bedding World order is confirmed." path="/order/success" noindex />
 
       <div className="container max-w-3xl py-16 md:py-20">
         <motion.div

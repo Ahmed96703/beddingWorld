@@ -28,7 +28,7 @@ export default function CartPage() {
 
   return (
     <>
-      <Seo title="Your Cart" description="Review your LINÉA cart." path="/cart" noindex />
+      <Seo title="Your Cart" description="Review your Bedding World cart." path="/cart" noindex />
 
       <div className="container py-12 md:py-16">
         <h1 className="font-display text-4xl md:text-5xl">Your Cart</h1>

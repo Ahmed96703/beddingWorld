@@ -23,7 +23,7 @@ export default function SearchPage() {
     <>
       <Seo
         title={query ? `Search · ${query}` : "Search"}
-        description={`Search results for ${query || "all products"} at LINÉA.`}
+        description={`Search results for ${query || "all products"} at Bedding World.`}
         path="/search"
         noindex
       />
