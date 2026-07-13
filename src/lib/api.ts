@@ -353,10 +353,11 @@ export interface StoreSettings {
 
 export const DEFAULT_SETTINGS: StoreSettings = {
   store_name: "Bedding World",
-  base_currency: "USD",
-  auto_detect_currency: true,
-  free_shipping_threshold: 120,
-  shipping_flat: 9,
+  base_currency: "PKR",
+  // Show PKR to everyone by default; visitors can still switch manually.
+  auto_detect_currency: false,
+  free_shipping_threshold: 5000,
+  shipping_flat: 250,
 };
 
 export async function fetchSettings(): Promise<StoreSettings> {

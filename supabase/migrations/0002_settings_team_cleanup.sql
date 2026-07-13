@@ -8,17 +8,24 @@
 -- ----------------------------------------------------------------------------
 create table if not exists public.store_settings (
   id                     integer primary key default 1,
-  store_name             text not null default 'LINÉA',
-  base_currency          text not null default 'USD',
-  auto_detect_currency   boolean not null default true,
-  free_shipping_threshold numeric(10, 2) not null default 120,
-  shipping_flat          numeric(10, 2) not null default 9,
+  store_name             text not null default 'Bedding World',
+  base_currency          text not null default 'PKR',
+  auto_detect_currency   boolean not null default false,
+  free_shipping_threshold numeric(10, 2) not null default 5000,
+  shipping_flat          numeric(10, 2) not null default 250,
   updated_at             timestamptz not null default now(),
   constraint store_settings_single_row check (id = 1)
 );
 
-insert into public.store_settings (id) values (1) on conflict (id) do nothing;
+insert into public.store_settings (id, store_name, base_currency, auto_detect_currency, free_shipping_threshold, shipping_flat)
+values (1, 'Bedding World', 'PKR', false, 5000, 250)
+on conflict (id) do nothing;
 
+-- If an older row already exists with the USD defaults, switch it to PKR.
+update public.store_settings
+set store_name = 'Bedding World', base_currency = 'PKR', auto_detect_currency = false
+where id = 1 and base_currency = 'USD';
+ 
 alter table public.store_settings enable row level security;
 
 drop policy if exists "public read settings" on public.store_settings;

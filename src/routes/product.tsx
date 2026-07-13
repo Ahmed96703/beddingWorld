@@ -233,7 +233,7 @@ export default function ProductPage() {
           {/* Assurances */}
           <ul className="mt-8 grid gap-3 text-sm text-muted-foreground">
             {[
-              { icon: Truck, text: "Free shipping on orders over $120" },
+              { icon: Truck, text: "Free delivery on bulk orders across Pakistan" },
               { icon: RotateCcw, text: "30-night comfort promise & easy returns" },
               { icon: ShieldCheck, text: "Cash on delivery available nationwide" },
             ].map(({ icon: Icon, text }) => (

@@ -12,7 +12,7 @@ import { CurrencySwitcher } from "@/components/currency-switcher";
 import { cn } from "@/lib/utils";
 
 const ANNOUNCEMENTS = [
-  "Complimentary shipping on orders over $120",
+  "Free delivery on bulk orders across Pakistan",
   "Cash on delivery available nationwide",
   "Sleep on it — 30-night comfort promise",
 ];
@@ -76,7 +76,7 @@ export function Header() {
           {/* Left: mobile menu + logo */}
           <div className="flex shrink-0 items-center gap-2">
             <button
-              className="-ml-2 p-2 xl:hidden"
+              className="-ml-2 p-2 lg:hidden"
               aria-label="Open menu"
               onClick={() => setMobileOpen(true)}
             >
@@ -84,7 +84,7 @@ export function Header() {
             </button>
             <Link
               to="/"
-              className="font-display text-2xl leading-none tracking-tight xl:text-[1.7rem]"
+              className="font-display text-2xl leading-none tracking-tight lg:text-[1.7rem]"
             >
               Bedding World
               <span className="ml-0.5 align-super text-clay">.</span>
@@ -92,7 +92,7 @@ export function Header() {
           </div>
 
           {/* Center: primary nav */}
-          <nav className="mx-auto hidden min-w-0 items-center gap-0.5 xl:flex">
+          <nav className="mx-auto hidden min-w-0 items-center gap-0.5 lg:flex">
             {tree.map((node) => (
               <Link
                 key={node.id}
@@ -162,7 +162,7 @@ export function Header() {
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               onMouseEnter={() => openMenu(activeNode.id)}
               onMouseLeave={scheduleClose}
-              className="absolute inset-x-0 top-full hidden border-t border-border bg-card shadow-soft backdrop-blur xl:block"
+              className="absolute inset-x-0 top-full hidden border-t border-border bg-card shadow-soft backdrop-blur lg:block"
             >
               <div className="container py-8">
                 <MegaMenu node={activeNode} onNavigate={() => setActiveId(null)} />

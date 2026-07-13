@@ -1,7 +1,31 @@
 import { Link } from "react-router-dom";
-import { Instagram, Facebook, Twitter } from "lucide-react";
+import { Instagram, Facebook, Phone } from "lucide-react";
 import { useCatalog } from "@/hooks/use-catalog";
 import { Newsletter } from "@/components/newsletter";
+
+/** TikTok mark (lucide has no brand icon for it). */
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M16.5 3c.32 2.1 1.6 3.79 3.7 4.06v2.55c-1.3 0-2.53-.42-3.7-1.13v6.83a6.06 6.06 0 1 1-6.06-6.06c.3 0 .6.02.9.07v2.7a3.36 3.36 0 1 0 2.36 3.22V3h2.8z" />
+    </svg>
+  );
+}
+
+const SOCIALS: {
+  Icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  href: string;
+}[] = [
+  { Icon: Instagram, label: "Instagram", href: "#" },
+  { Icon: Facebook, label: "Facebook", href: "#" },
+  { Icon: TikTokIcon, label: "TikTok", href: "#" },
+];
 
 export function Footer() {
   const { tree } = useCatalog();
@@ -20,12 +44,27 @@ export function Footer() {
             Premium bedding and home textiles, designed to make the everyday
             feel considered. Woven for comfort, made to last.
           </p>
+          {/* Contact */}
+          <div className="mt-6 space-y-1 text-sm">
+            <p className="font-medium text-foreground">Mohsin Khan</p>
+            <p className="text-muted-foreground">Owner · Bedding World</p>
+            <a
+              href="tel:+923054788662"
+              className="mt-1 inline-flex items-center gap-2 text-foreground/80 transition-colors hover:text-clay"
+            >
+              <Phone className="h-4 w-4 text-clay" />
+              +92 305 4788662
+            </a>
+          </div>
+
           <div className="mt-6 flex gap-2">
-            {[Instagram, Facebook, Twitter].map((Icon, i) => (
+            {SOCIALS.map(({ Icon, label, href }) => (
               <a
-                key={i}
-                href="#"
-                aria-label="Social media"
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={label}
                 className="rounded-full border border-border p-2.5 text-foreground/70 transition-colors hover:border-foreground/30 hover:text-foreground"
               >
                 <Icon className="h-4 w-4" />

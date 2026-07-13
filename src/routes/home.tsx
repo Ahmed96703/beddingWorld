@@ -94,7 +94,7 @@ export default function HomePage() {
             </div>
             <div className="absolute -bottom-5 -left-5 hidden rounded-xl border border-border bg-card/95 p-4 shadow-lift backdrop-blur sm:block">
               <p className="font-display text-lg">Stonewashed Linen</p>
-              <p className="text-sm text-muted-foreground">From $89 · 6 shades</p>
+              <p className="text-sm text-muted-foreground">6 soft shades</p>
             </div>
           </motion.div>
         </div>
@@ -103,7 +103,7 @@ export default function HomePage() {
         <div className="border-y border-border bg-secondary/40">
           <div className="container grid grid-cols-2 gap-4 py-5 text-sm md:grid-cols-4">
             {[
-              { icon: Truck, label: "Free shipping over $120" },
+              { icon: Truck, label: "Free delivery on bulk orders" },
               { icon: ShieldCheck, label: "30-night comfort promise" },
               { icon: Leaf, label: "Responsibly sourced fibers" },
               { icon: Sparkles, label: "Cash on delivery" },
