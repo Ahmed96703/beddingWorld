@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, ShoppingBag, User, Menu, ChevronDown } from "lucide-react";
+import { Search, ShoppingBag, User, Menu, ChevronDown, House } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useCart, selectCount } from "@/store/cart";
@@ -93,6 +93,13 @@ export function Header() {
 
           {/* Center: primary nav */}
           <nav className="mx-auto hidden min-w-0 items-center gap-0.5 lg:flex">
+            <Link
+              to="/"
+              className="flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:text-foreground"
+            >
+              <House className="h-3.5 w-3.5" />
+              Home
+            </Link>
             {tree.map((node) => (
               <Link
                 key={node.id}

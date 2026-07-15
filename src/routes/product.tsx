@@ -1,10 +1,19 @@
 import { useMemo, useState } from "react";
 import { useParams, Navigate, Link } from "react-router-dom";
-import { Minus, Plus, ShoppingBag, Truck, RotateCcw, ShieldCheck } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  ShoppingBag,
+  Truck,
+  RotateCcw,
+  ShieldCheck,
+  MessageCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Seo } from "@/components/seo";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductImage } from "@/components/product-image";
+import { ProductMagnifier } from "@/components/product-magnifier";
 import { ProductGrid } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +33,7 @@ export default function ProductPage() {
   const { format } = useCurrency();
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [size, setSize] = useState<"single" | "double">("single");
 
   const { data: product, loading, error, refetch } = useAsync(
     () => fetchProductBySlug(slug),
@@ -69,6 +79,15 @@ export default function ProductPage() {
   const onSale =
     product.compare_at_price != null &&
     product.compare_at_price > product.price;
+  const needsSizeSelection = !!category && category.slug.includes("sheet");
+  const selectedVariant = needsSizeSelection
+    ? size === "single"
+      ? "Single"
+      : "Double"
+    : undefined;
+  const whatsappUrl = `https://wa.me/923054788662?text=${encodeURIComponent(
+    `Hi Bedding World, I want to order ${product.name}${selectedVariant ? ` (${selectedVariant})` : ""}.`,
+  )}`;
 
   // Build breadcrumb trail from the deepest known ancestor down.
   const topCat = grandparent ?? parent ?? category;
@@ -94,11 +113,12 @@ export default function ProductPage() {
         slug: product.slug,
         price: product.price,
         image: product.images?.[0] ?? null,
+        variant: selectedVariant,
       },
       qty,
     );
     toast.success("Added to cart", {
-      description: `${qty} × ${product.name}`,
+      description: `${qty} × ${product.name}${selectedVariant ? ` • ${selectedVariant}` : ""}`,
     });
   };
 
@@ -145,10 +165,11 @@ export default function ProductPage() {
             </div>
           )}
           <div className="relative aspect-[4/5] flex-1 overflow-hidden rounded-2xl bg-secondary">
-            <ProductImage
+            <ProductMagnifier
               src={images[activeImage]}
               alt={product.name}
               eager
+              className="absolute inset-0"
             />
             {onSale && (
               <Badge variant="clay" className="absolute left-4 top-4">
@@ -193,6 +214,35 @@ export default function ProductPage() {
             </p>
           )}
 
+          {needsSizeSelection && (
+            <div className="mt-6">
+              <p className="text-sm font-medium">Choose size</p>
+              <div className="mt-3 inline-flex rounded-lg border border-border bg-secondary/40 p-1">
+                {[
+                  { key: "single", label: "Single" },
+                  { key: "double", label: "Double" },
+                ].map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setSize(option.key as "single" | "double")}
+                    className={cn(
+                      "rounded-md px-4 py-2 text-sm font-medium transition-colors",
+                      size === option.key
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Available for bed sheet styles.
+              </p>
+            </div>
+          )}
+
           <Separator className="my-8" />
 
           {/* Quantity + add to cart */}
@@ -221,6 +271,12 @@ export default function ProductPage() {
             <Button size="lg" className="flex-1" onClick={handleAdd}>
               <ShoppingBag className="h-4 w-4" />
               Add to Cart · {format(product.price * qty)}
+            </Button>
+            <Button asChild variant="outline" size="lg" className="sm:min-w-44">
+              <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+              </a>
             </Button>
           </div>
 
@@ -255,6 +311,16 @@ export default function ProductPage() {
           <ProductGrid products={relatedProducts.slice(0, 4)} />
         </section>
       )}
+
+      <a
+        href={whatsappUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-[#25d366] px-4 py-3 text-sm font-semibold text-white shadow-lift transition-transform hover:scale-[1.02]"
+      >
+        <MessageCircle className="h-4 w-4" />
+        WhatsApp
+      </a>
     </>
   );
 }

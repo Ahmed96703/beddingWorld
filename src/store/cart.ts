@@ -7,18 +7,21 @@ export interface CartItem {
   slug: string;
   price: number;
   image: string | null;
+  variant?: string;
   quantity: number;
 }
 
 interface CartState {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
-  removeItem: (id: string) => void;
-  setQuantity: (id: string, quantity: number) => void;
-  increment: (id: string) => void;
-  decrement: (id: string) => void;
+  removeItem: (id: string, variant?: string) => void;
+  setQuantity: (id: string, quantity: number, variant?: string) => void;
+  increment: (id: string, variant?: string) => void;
+  decrement: (id: string, variant?: string) => void;
   clear: () => void;
 }
+
+const itemKey = (id: string, variant?: string) => `${id}::${variant ?? ""}`;
 
 export const useCart = create<CartState>()(
   persist(
@@ -26,11 +29,14 @@ export const useCart = create<CartState>()(
       items: [],
       addItem: (item, quantity = 1) =>
         set((state) => {
-          const existing = state.items.find((i) => i.id === item.id);
+          const key = itemKey(item.id, item.variant);
+          const existing = state.items.find(
+            (i) => itemKey(i.id, i.variant) === key,
+          );
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.id === item.id
+                itemKey(i.id, i.variant) === key
                   ? { ...i, quantity: i.quantity + quantity }
                   : i,
               ),
@@ -38,27 +44,37 @@ export const useCart = create<CartState>()(
           }
           return { items: [...state.items, { ...item, quantity }] };
         }),
-      removeItem: (id) =>
-        set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
-      setQuantity: (id, quantity) =>
+      removeItem: (id, variant) =>
+        set((state) => ({
+          items: state.items.filter(
+            (i) => itemKey(i.id, i.variant) !== itemKey(id, variant),
+          ),
+        })),
+      setQuantity: (id, quantity, variant) =>
         set((state) => ({
           items: state.items
             .map((i) =>
-              i.id === id ? { ...i, quantity: Math.max(1, quantity) } : i,
+              itemKey(i.id, i.variant) === itemKey(id, variant)
+                ? { ...i, quantity: Math.max(1, quantity) }
+                : i,
             )
             .filter((i) => i.quantity > 0),
         })),
-      increment: (id) =>
+      increment: (id, variant) =>
         set((state) => ({
           items: state.items.map((i) =>
-            i.id === id ? { ...i, quantity: i.quantity + 1 } : i,
+            itemKey(i.id, i.variant) === itemKey(id, variant)
+              ? { ...i, quantity: i.quantity + 1 }
+              : i,
           ),
         })),
-      decrement: (id) =>
+      decrement: (id, variant) =>
         set((state) => ({
           items: state.items
             .map((i) =>
-              i.id === id ? { ...i, quantity: i.quantity - 1 } : i,
+              itemKey(i.id, i.variant) === itemKey(id, variant)
+                ? { ...i, quantity: i.quantity - 1 }
+                : i,
             )
             .filter((i) => i.quantity > 0),
         })),

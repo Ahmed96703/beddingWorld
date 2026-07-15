@@ -194,7 +194,7 @@ export default function CheckoutPage() {
 
               <ul className="mt-5 space-y-4">
                 {items.map((item) => (
-                  <li key={item.id} className="flex gap-3">
+                  <li key={`${item.id}-${item.variant ?? "default"}`} className="flex gap-3">
                     <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded bg-secondary">
                       <ProductImage src={item.image} alt={item.name} />
                       <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[0.62rem] font-semibold text-primary-foreground">
@@ -202,7 +202,14 @@ export default function CheckoutPage() {
                       </span>
                     </div>
                     <div className="flex flex-1 items-center justify-between gap-2">
-                      <span className="line-clamp-2 text-sm">{item.name}</span>
+                      <div className="min-w-0">
+                        <span className="line-clamp-2 text-sm">{item.name}</span>
+                        {item.variant && (
+                          <p className="text-xs text-muted-foreground">
+                            Size: {item.variant}
+                          </p>
+                        )}
+                      </div>
                       <span className="text-sm font-medium">
                         {format(item.price * item.quantity)}
                       </span>

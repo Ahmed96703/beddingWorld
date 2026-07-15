@@ -15,6 +15,11 @@ const SearchPage = lazy(() => import("@/routes/search"));
 const CartPage = lazy(() => import("@/routes/cart"));
 const CheckoutPage = lazy(() => import("@/routes/checkout"));
 const OrderSuccessPage = lazy(() => import("@/routes/order-success"));
+const AboutPage = lazy(() => import("@/routes/about"));
+const PrivacyPolicyPage = lazy(() => import("@/routes/privacy-policy"));
+const ShoppingPolicyPage = lazy(() => import("@/routes/shopping-policy"));
+const ReturnExchangePolicyPage = lazy(() => import("@/routes/return-exchange-policy"));
+const CareInstructionsPage = lazy(() => import("@/routes/care-instructions"));
 const NotFoundPage = lazy(() => import("@/routes/not-found"));
 
 const AdminLoginPage = lazy(() => import("@/routes/admin/login"));
@@ -40,6 +45,11 @@ export default function App() {
             <Route path="cart" element={<CartPage />} />
             <Route path="checkout" element={<CheckoutPage />} />
             <Route path="order/success" element={<OrderSuccessPage />} />
+            <Route path="about-us" element={<AboutPage />} />
+            <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="shopping-policy" element={<ShoppingPolicyPage />} />
+            <Route path="return-exchange-policy" element={<ReturnExchangePolicyPage />} />
+            <Route path="care-instructions" element={<CareInstructionsPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
 

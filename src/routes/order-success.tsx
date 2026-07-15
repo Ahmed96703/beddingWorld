@@ -67,13 +67,18 @@ export default function OrderSuccessPage() {
 
           <ul className="mt-4 space-y-4">
             {order.items.map((item) => (
-              <li key={item.id} className="flex gap-3">
+              <li key={`${item.id}-${item.variant ?? "default"}`} className="flex gap-3">
                 <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded bg-secondary">
                   <ProductImage src={item.image} alt={item.name} />
                 </div>
                 <div className="flex flex-1 items-center justify-between gap-2">
                   <div>
                     <p className="text-sm font-medium">{item.name}</p>
+                    {item.variant && (
+                      <p className="text-xs text-muted-foreground">
+                        Size: {item.variant}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       Qty {item.quantity} · {format(item.price)}
                     </p>

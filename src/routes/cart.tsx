@@ -67,7 +67,7 @@ export default function CartPage() {
 
               <ul className="divide-y divide-border">
                 {items.map((item) => (
-                  <li key={item.id} className="flex gap-4 py-6">
+                  <li key={`${item.id}-${item.variant ?? "default"}`} className="flex gap-4 py-6">
                     <Link
                       to={`/product/${item.slug}`}
                       className="h-28 w-24 shrink-0 overflow-hidden rounded-md bg-secondary"
@@ -90,11 +90,16 @@ export default function CartPage() {
                       <p className="mt-1 text-sm text-muted-foreground">
                         {format(item.price)} each
                       </p>
+                      {item.variant && (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Size: {item.variant}
+                        </p>
+                      )}
 
                       <div className="mt-auto flex items-center justify-between pt-4">
                         <div className="flex items-center rounded-md border border-border">
                           <button
-                            onClick={() => decrement(item.id)}
+                            onClick={() => decrement(item.id, item.variant)}
                             className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground"
                             aria-label="Decrease quantity"
                           >
@@ -104,7 +109,7 @@ export default function CartPage() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => increment(item.id)}
+                            onClick={() => increment(item.id, item.variant)}
                             className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground"
                             aria-label="Increase quantity"
                           >
@@ -113,7 +118,7 @@ export default function CartPage() {
                         </div>
 
                         <button
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => removeItem(item.id, item.variant)}
                           className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />

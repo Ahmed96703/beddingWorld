@@ -67,3 +67,30 @@ export function childrenOf(
     .filter((c) => c.parent_id === parentId)
     .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
 }
+
+/** Walk from a category up to the root, returning the chain from parent to top. */
+export function ancestorChain(
+  flat: CategoryRow[],
+  categoryId: string | null | undefined,
+): CategoryRow[] {
+  if (!categoryId) return [];
+  const byId = new Map(flat.map((c) => [c.id, c]));
+  const chain: CategoryRow[] = [];
+  let current = byId.get(categoryId);
+  while (current?.parent_id) {
+    const parent = byId.get(current.parent_id);
+    if (!parent) break;
+    chain.push(parent);
+    current = parent;
+  }
+  return chain;
+}
+
+/** Check whether a category lives under an ancestor with the provided slug. */
+export function isDescendantOfSlug(
+  flat: CategoryRow[],
+  categoryId: string | null | undefined,
+  ancestorSlug: string,
+): boolean {
+  return ancestorChain(flat, categoryId).some((c) => c.slug === ancestorSlug);
+}

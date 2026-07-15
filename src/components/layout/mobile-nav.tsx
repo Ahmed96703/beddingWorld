@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { House } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -34,10 +35,35 @@ export function MobileNav({
           <Link
             to="/"
             onClick={onClose}
-            className="mb-4 font-display text-2xl tracking-tight"
+            className="mb-4 inline-flex items-center gap-2 font-display text-2xl tracking-tight"
           >
+            <House className="h-5 w-5 text-clay" />
             Bedding World
           </Link>
+
+          <div className="mb-5 rounded-lg border border-border bg-secondary/30 p-3">
+            <Link
+              to="/"
+              onClick={onClose}
+              className="block rounded-md px-2 py-2 text-sm font-medium hover:bg-background"
+            >
+              Home
+            </Link>
+            <Link
+              to="/about-us"
+              onClick={onClose}
+              className="block rounded-md px-2 py-2 text-sm font-medium hover:bg-background"
+            >
+              About Us
+            </Link>
+            <Link
+              to="/privacy-policy"
+              onClick={onClose}
+              className="block rounded-md px-2 py-2 text-sm font-medium hover:bg-background"
+            >
+              Privacy Policy
+            </Link>
+          </div>
 
           <Accordion type="multiple" className="flex-1">
             {tree.map((node) => (
@@ -92,6 +118,12 @@ export function MobileNav({
             </Link>
             <Link to="/admin" onClick={onClose} className="block">
               {isAdmin ? "Admin Dashboard" : "Account"}
+            </Link>
+            <Link to="/shopping-policy" onClick={onClose} className="block">
+              Shopping Policy
+            </Link>
+            <Link to="/return-exchange-policy" onClick={onClose} className="block">
+              Return & Exchange
             </Link>
           </div>
         </div>
