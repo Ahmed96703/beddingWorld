@@ -1,58 +1,113 @@
-import { Seo } from "@/components/seo";
+import { PolicyLayout, type PolicySection } from "@/components/policy-layout";
 
-const sections = [
+const sections: PolicySection[] = [
   {
-    title: "Information we collect",
-    body:
-      "We collect the details you share during checkout, account creation, newsletter sign-up, or customer support conversations. This may include your name, email, phone number, shipping address, and order notes.",
+    title: "Personal Identification Information",
+    blocks: [
+      {
+        lead: "We may collect personal information from customers in various ways, including when you:",
+        list: [
+          "Register an account",
+          "Place an order",
+          "Subscribe to our newsletter",
+          "Contact our customer support",
+          "Fill out a contact form",
+        ],
+      },
+      {
+        lead: "The information we may collect includes:",
+        list: [
+          "Full Name",
+          "Email Address",
+          "Mobile Number",
+          "Shipping & Billing Address",
+          "Payment Details (where applicable)",
+        ],
+      },
+      "Providing this information is voluntary, but certain services may not be available without it.",
+    ],
   },
   {
-    title: "How we use it",
-    body:
-      "We use your information to process orders, provide delivery updates, respond to inquiries, improve the website, and send promotional messages only when you have opted in.",
+    title: "Cookies",
+    blocks: [
+      "Our website may use cookies to improve your browsing experience. Cookies help us remember your preferences, analyze website traffic, and enhance website performance.",
+      "You can choose to disable cookies through your browser settings. However, some features of the website may not function properly if cookies are disabled.",
+    ],
   },
   {
-    title: "Cookies and security",
-    body:
-      "Cookies help us remember preferences and understand site usage. We use reasonable technical safeguards to protect your data, and we do not sell or rent your personal information.",
+    title: "How Your Information Is Useful to Us",
+    blocks: [
+      {
+        lead: "We use the information you provide to:",
+        list: [
+          "Process and deliver your orders.",
+          "Improve customer service and respond to your inquiries.",
+          "Personalize your shopping experience.",
+          "Improve our website and product offerings.",
+          "Send order confirmations and delivery updates.",
+          "Notify you about promotions, discounts, and new arrivals (only if you have subscribed).",
+          "Prevent fraudulent transactions and maintain website security.",
+        ],
+      },
+      "We never sell or rent your personal information to third parties.",
+    ],
   },
   {
-    title: "Sharing",
-    body:
-      "We may share limited information with trusted service providers such as couriers, payment partners, website hosting vendors, or authorities where the law requires it.",
+    title: "How We Protect Your Information",
+    blocks: [
+      "We maintain appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.",
+      "Your personal information, including your name, address, email, phone number, login credentials, and transaction details, is stored on secure servers with industry-standard security practices.",
+    ],
+  },
+  {
+    title: "Sharing Your Information",
+    blocks: [
+      {
+        lead: "We may share your information only when necessary with trusted third parties such as:",
+        list: [
+          "Courier and delivery partners",
+          "Payment service providers",
+          "Website hosting providers",
+          "Government authorities where required by law",
+        ],
+      },
+      "These parties are required to keep your information confidential and use it only for the purpose of providing their services.",
+    ],
+  },
+  {
+    title: "Payment Security",
+    blocks: [
+      "Your payment information is processed through secure payment gateways. Bedding World does not store complete debit or credit card information on its servers.",
+    ],
+  },
+  {
+    title: "Third-Party Websites",
+    blocks: [
+      "Our website may contain links to third-party websites. We are not responsible for the privacy policies or content of those websites. We encourage users to review the privacy policies of any external websites they visit.",
+    ],
+  },
+  {
+    title: "Changes to This Privacy Policy",
+    blocks: [
+      "Bedding World reserves the right to update this Privacy Policy at any time. Any changes will be posted on this page with the updated revision date.",
+    ],
+  },
+  {
+    title: "Contact Us",
+    blocks: [
+      "If you have any questions regarding this Privacy Policy, please contact us on WhatsApp at +92 305 4788662.",
+    ],
   },
 ];
 
 export default function PrivacyPolicyPage() {
   return (
-    <>
-      <Seo
-        title="Privacy Policy"
-        description="How Bedding World collects, uses, and protects customer information."
-        path="/privacy-policy"
-      />
-
-      <div className="container max-w-4xl py-12 md:py-16">
-        <p className="eyebrow">Legal</p>
-        <h1 className="mt-3 font-display text-4xl leading-tight md:text-5xl">
-          Privacy Policy
-        </h1>
-        <p className="mt-4 max-w-3xl text-muted-foreground">
-          We respect your privacy and keep this policy simple: collect what we
-          need to fulfil orders, use it responsibly, and protect it carefully.
-        </p>
-
-        <div className="mt-10 space-y-6">
-          {sections.map((section) => (
-            <section key={section.title} className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="font-display text-2xl">{section.title}</h2>
-              <p className="mt-3 leading-relaxed text-muted-foreground">
-                {section.body}
-              </p>
-            </section>
-          ))}
-        </div>
-      </div>
-    </>
+    <PolicyLayout
+      eyebrow="Legal"
+      title="Privacy Policy"
+      path="/privacy-policy"
+      intro="At Bedding World, we respect your privacy and are committed to protecting the personal information you share with us. We collect customer information only to provide a better shopping experience and process your orders efficiently."
+      sections={sections}
+    />
   );
 }
