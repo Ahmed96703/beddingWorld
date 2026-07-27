@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 import { useCart, selectSubtotal } from "@/store/cart";
-import { estimatedDelivery, makeOrderRef } from "@/lib/utils";
+import { estimatedDelivery, normalizeError } from "@/lib/utils";
+import { placeOrder as placeOrderApi } from "@/lib/api";
 import { useCurrency } from "@/context/currency";
 import { shippingFor, saveLastOrder, type PlacedOrder } from "@/lib/order";
 import { useStoreSettings } from "@/hooks/use-settings";
@@ -69,32 +71,54 @@ export default function CheckoutPage() {
     return Object.keys(next).length === 0;
   };
 
-  const placeOrder = (e: React.FormEvent) => {
+  const placeOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
 
-    const order: PlacedOrder = {
-      ref: makeOrderRef(),
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      address: form.address.trim(),
-      city: form.city.trim(),
-      notes: form.notes.trim() || undefined,
-      items,
-      subtotal,
-      shipping,
-      total,
-      placedAt: new Date().toISOString(),
-      deliveryEstimate: estimatedDelivery(4),
-    };
+    try {
+      // Server-side: atomically checks stock, saves the order, decrements stock.
+      const result = await placeOrderApi(
+        {
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          address: form.address.trim(),
+          city: form.city.trim(),
+          notes: form.notes.trim() || undefined,
+        },
+        items.map((i) => ({
+          product_id: i.id,
+          variant_id: i.variantId ?? null,
+          quantity: i.quantity,
+        })),
+        shipping,
+      );
 
-    // Simulate a brief network round-trip for the confirmation.
-    setTimeout(() => {
+      const order: PlacedOrder = {
+        ref: result.order_ref,
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        address: form.address.trim(),
+        city: form.city.trim(),
+        notes: form.notes.trim() || undefined,
+        items,
+        subtotal: result.subtotal || subtotal,
+        shipping: result.shipping ?? shipping,
+        total: result.total || total,
+        placedAt: new Date().toISOString(),
+        deliveryEstimate: estimatedDelivery(4),
+      };
+
       saveLastOrder(order);
       clear();
       navigate("/order/success", { replace: true });
-    }, 650);
+    } catch (err) {
+      // Overselling / stock errors surface here with a readable message.
+      toast.error("Could not place order", {
+        description: normalizeError(err).message,
+      });
+      setSubmitting(false);
+    }
   };
 
   return (

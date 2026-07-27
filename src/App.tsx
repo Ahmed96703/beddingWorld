@@ -28,6 +28,8 @@ const AdminProducts = lazy(() => import("@/routes/admin/products"));
 const AdminCategories = lazy(() => import("@/routes/admin/categories"));
 const AdminTeam = lazy(() => import("@/routes/admin/team"));
 const AdminSettings = lazy(() => import("@/routes/admin/settings"));
+const AdminOrders = lazy(() => import("@/routes/admin/orders"));
+const AdminInventory = lazy(() => import("@/routes/admin/inventory"));
 
 export default function App() {
   return (
@@ -67,6 +69,8 @@ export default function App() {
           >
             <Route index element={<AdminDashboard />} />
             <Route path="products" element={<AdminProducts />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="inventory" element={<AdminInventory />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="team" element={<AdminTeam />} />
             <Route path="settings" element={<AdminSettings />} />

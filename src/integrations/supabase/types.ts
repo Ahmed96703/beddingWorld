@@ -32,6 +32,24 @@ export interface Database {
         Update: Partial<StoreSettingsRow>;
         Relationships: [];
       };
+      product_variants: {
+        Row: ProductVariantRow;
+        Insert: ProductVariantInsert;
+        Update: Partial<ProductVariantInsert>;
+        Relationships: [];
+      };
+      orders: {
+        Row: OrderRow;
+        Insert: Partial<OrderRow>;
+        Update: Partial<OrderRow>;
+        Relationships: [];
+      };
+      order_items: {
+        Row: OrderItemRow;
+        Insert: Partial<OrderItemRow>;
+        Update: Partial<OrderItemRow>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -50,6 +68,18 @@ export interface Database {
       revoke_admin: {
         Args: { _user_id: string };
         Returns: undefined;
+      };
+      place_order: {
+        Args: { _customer: PlaceOrderCustomer; _items: PlaceOrderItem[]; _shipping: number };
+        Returns: PlaceOrderResult;
+      };
+      set_order_status: {
+        Args: { _order_id: string; _status: OrderStatus };
+        Returns: undefined;
+      };
+      get_inventory_report: {
+        Args: Record<string, never>;
+        Returns: InventoryReportRow[];
       };
     };
     Enums: {
@@ -133,4 +163,104 @@ export type StoreSettingsRow = {
   free_shipping_threshold: number;
   shipping_flat: number;
   updated_at: string;
+};
+
+/* ------------------------------ Variants ------------------------------------ */
+
+export type ProductVariantRow = {
+  id: string;
+  product_id: string;
+  name: string;
+  variant_key: string;
+  price: number;
+  stock: number;
+  sort_order: number;
+  created_at: string;
+};
+
+export type ProductVariantInsert = {
+  id?: string;
+  product_id: string;
+  name: string;
+  variant_key: string;
+  price: number;
+  stock?: number;
+  sort_order?: number;
+};
+
+/* -------------------------------- Orders ------------------------------------ */
+
+export type OrderStatus =
+  | "received"
+  | "confirmed"
+  | "packed"
+  | "shipped"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled";
+
+export type OrderRow = {
+  id: string;
+  order_ref: string;
+  customer_name: string;
+  phone: string;
+  email: string | null;
+  address: string;
+  city: string;
+  notes: string | null;
+  subtotal: number;
+  shipping: number;
+  total: number;
+  payment_method: string;
+  status: OrderStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OrderItemRow = {
+  id: string;
+  order_id: string;
+  product_id: string | null;
+  variant_id: string | null;
+  product_name: string;
+  variant_name: string | null;
+  unit_price: number;
+  quantity: number;
+  line_total: number;
+};
+
+/** An order joined with its line items (used by the admin Orders page). */
+export type OrderWithItems = OrderRow & { order_items: OrderItemRow[] };
+
+/* -------------------------- place_order() payloads -------------------------- */
+
+export type PlaceOrderCustomer = {
+  name: string;
+  phone: string;
+  email?: string;
+  address: string;
+  city: string;
+  notes?: string;
+};
+
+export type PlaceOrderItem = {
+  product_id: string;
+  variant_id?: string | null;
+  quantity: number;
+};
+
+export type PlaceOrderResult = {
+  id: string;
+  order_ref: string;
+  subtotal: number;
+  shipping: number;
+  total: number;
+};
+
+export type InventoryReportRow = {
+  product_id: string;
+  product_name: string;
+  variant_name: string | null;
+  stock: number;
+  sold: number;
 };

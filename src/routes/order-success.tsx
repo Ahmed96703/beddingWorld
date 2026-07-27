@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { CheckCircle2, Truck, Package, MapPin } from "lucide-react";
+import { CheckCircle2, Truck, Package, MapPin, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { Seo } from "@/components/seo";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,28 @@ import { useCurrency } from "@/context/currency";
 export default function OrderSuccessPage() {
   const order = useMemo(() => loadLastOrder(), []);
   const { format } = useCurrency();
+
+  const whatsappConfirmUrl = useMemo(() => {
+    if (!order) return "#";
+    const lines = order.items.map(
+      (i) =>
+        `• ${i.name}${i.variant ? ` (${i.variant})` : ""} × ${i.quantity}`,
+    );
+    const message = [
+      `🛒 New Order — ${order.ref}`,
+      `Name: ${order.name}`,
+      `Phone: ${order.phone}`,
+      `City: ${order.city}`,
+      `Address: ${order.address}`,
+      "",
+      "Items:",
+      ...lines,
+      "",
+      `Total: ${format(order.total)}`,
+      "Payment: Cash on Delivery",
+    ].join("\n");
+    return `https://wa.me/923054788662?text=${encodeURIComponent(message)}`;
+  }, [order, format]);
 
   if (!order) return <Navigate to="/" replace />;
 
@@ -126,11 +148,21 @@ export default function OrderSuccessPage() {
           </div>
         </div>
 
-        <div className="mt-8 flex justify-center">
-          <Button asChild size="lg">
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Button asChild size="lg" variant="clay">
+            <a href={whatsappConfirmUrl} target="_blank" rel="noreferrer">
+              <MessageCircle className="h-4 w-4" />
+              Confirm on WhatsApp
+            </a>
+          </Button>
+          <Button asChild size="lg" variant="outline">
             <Link to="/">Continue shopping</Link>
           </Button>
         </div>
+        <p className="mt-3 text-center text-xs text-muted-foreground">
+          Tap “Confirm on WhatsApp” to send your order to our team for faster
+          processing.
+        </p>
       </div>
     </>
   );

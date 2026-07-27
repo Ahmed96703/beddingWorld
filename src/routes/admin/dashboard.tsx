@@ -9,13 +9,14 @@ import {
   Plus,
   Users,
   Settings,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/states";
 import { useAuth } from "@/context/auth";
 import { useAsync } from "@/hooks/use-async";
-import { fetchAdminStats, fetchProducts } from "@/lib/api";
+import { fetchAdminStats, fetchProducts, fetchInventoryReport } from "@/lib/api";
 import { ProductImage } from "@/components/product-image";
 import { Badge } from "@/components/ui/badge";
 import { useCurrency } from "@/context/currency";
@@ -28,6 +29,8 @@ export default function AdminDashboard() {
     () => fetchProducts({ status: "all", sort: "newest", limit: 5 }),
     [],
   );
+  const inventory = useAsync(fetchInventoryReport, []);
+  const lowStock = (inventory.data ?? []).filter((r) => r.stock <= 5);
 
   const cards = [
     { label: "Total products", value: stats.data?.totalProducts, icon: Package },
@@ -53,6 +56,24 @@ export default function AdminDashboard() {
           </Link>
         </Button>
       </header>
+
+      {/* Low-stock alert */}
+      {lowStock.length > 0 && (
+        <Link
+          to="/admin/inventory"
+          className="flex items-center justify-between gap-3 rounded-xl border border-clay/40 bg-clay/5 p-4 transition-colors hover:bg-clay/10"
+        >
+          <span className="flex items-center gap-3 text-sm">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-clay" />
+            <span>
+              <strong>{lowStock.length}</strong>{" "}
+              {lowStock.length === 1 ? "item is" : "items are"} low or out of
+              stock — tap to review inventory.
+            </span>
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-clay" />
+        </Link>
+      )}
 
       {stats.error ? (
         <ErrorState error={stats.error} onRetry={stats.refetch} />

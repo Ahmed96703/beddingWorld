@@ -7,7 +7,12 @@ export interface CartItem {
   slug: string;
   price: number;
   image: string | null;
+  /** Variant label shown to the customer, e.g. "Single" (undefined = no variant). */
   variant?: string;
+  /** Variant row id — sent to place_order() so the right stock is decremented. */
+  variantId?: string;
+  /** Max available stock for this line, used to cap the quantity selector. */
+  maxStock?: number;
   quantity: number;
 }
 

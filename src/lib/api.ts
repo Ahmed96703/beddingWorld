@@ -4,6 +4,15 @@ import type {
   ProductRow,
   ProductInsert,
   CategoryInsert,
+  ProductVariantRow,
+  ProductVariantInsert,
+  OrderRow,
+  OrderWithItems,
+  OrderStatus,
+  PlaceOrderCustomer,
+  PlaceOrderItem,
+  PlaceOrderResult,
+  InventoryReportRow,
 } from "@/integrations/supabase/types";
 import { useDemoCatalog } from "@/lib/demo-store";
 
@@ -424,4 +433,129 @@ export async function revokeAdmin(userId: string): Promise<void> {
     throw new Error("Connect Supabase to manage real admins.");
   const { error } = await supabase.rpc("revoke_admin", { _user_id: userId });
   if (error) throw error;
+}
+
+/* ------------------------------ Product variants ----------------------------- */
+
+/** Variants for a product (empty = the product is sold with its own price/stock). */
+export async function fetchProductVariants(
+  productId: string,
+): Promise<ProductVariantRow[]> {
+  if (!isSupabaseConfigured) return demo([]);
+  const { data, error } = await supabase
+    .from("product_variants")
+    .select("*")
+    .eq("product_id", productId)
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * Replace the full set of variants for a product (delete-then-insert). Called
+ * when saving a product from the admin form.
+ */
+export async function saveProductVariants(
+  productId: string,
+  variants: Omit<ProductVariantInsert, "product_id">[],
+): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  const del = await supabase
+    .from("product_variants")
+    .delete()
+    .eq("product_id", productId);
+  if (del.error) throw del.error;
+  if (variants.length === 0) return;
+  const rows = variants.map((v, i) => ({
+    ...v,
+    product_id: productId,
+    sort_order: v.sort_order ?? i,
+  }));
+  const { error } = await supabase.from("product_variants").insert(rows);
+  if (error) throw error;
+}
+
+/* ---------------------------------- Orders ----------------------------------- */
+
+/** Place a COD order — atomic stock check + decrement happens server-side. */
+export async function placeOrder(
+  customer: PlaceOrderCustomer,
+  items: PlaceOrderItem[],
+  shipping: number,
+): Promise<PlaceOrderResult> {
+  if (!isSupabaseConfigured) {
+    // Demo mode: simulate a successful order without touching a backend.
+    const ref = "BW-" + Math.random().toString(36).toUpperCase().slice(2, 8);
+    const store = useDemoCatalog.getState();
+    let subtotal = 0;
+    for (const it of items) {
+      const p = store.products.find((x) => x.id === it.product_id);
+      if (p) {
+        subtotal += p.price * it.quantity;
+        store.updateProduct(p.id, {
+          stock: Math.max(0, p.stock - it.quantity),
+        });
+      }
+    }
+    return demo({ id: ref, order_ref: ref, subtotal, shipping, total: subtotal + shipping });
+  }
+  const { data, error } = await supabase.rpc("place_order", {
+    _customer: customer,
+    _items: items,
+    _shipping: shipping,
+  });
+  if (error) throw error;
+  return data as PlaceOrderResult;
+}
+
+export async function fetchOrders(): Promise<OrderRow[]> {
+  if (!isSupabaseConfigured) return demo([]);
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchOrder(id: string): Promise<OrderWithItems | null> {
+  if (!isSupabaseConfigured) return demo(null);
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*, order_items(*)")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return (data ?? null) as unknown as OrderWithItems | null;
+}
+
+export async function setOrderStatus(
+  id: string,
+  status: OrderStatus,
+): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  const { error } = await supabase.rpc("set_order_status", {
+    _order_id: id,
+    _status: status,
+  });
+  if (error) throw error;
+}
+
+/* ------------------------------ Inventory report ----------------------------- */
+
+export async function fetchInventoryReport(): Promise<InventoryReportRow[]> {
+  if (!isSupabaseConfigured) {
+    return demo(
+      demoProducts().map((p) => ({
+        product_id: p.id,
+        product_name: p.name,
+        variant_name: null,
+        stock: p.stock,
+        sold: 0,
+      })),
+    );
+  }
+  const { data, error } = await supabase.rpc("get_inventory_report");
+  if (error) throw error;
+  return (data ?? []) as InventoryReportRow[];
 }

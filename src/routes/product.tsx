@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Navigate, Link } from "react-router-dom";
 import {
   Minus,
@@ -8,6 +8,7 @@ import {
   RotateCcw,
   ShieldCheck,
   MessageCircle,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Seo } from "@/components/seo";
@@ -21,10 +22,12 @@ import { Separator } from "@/components/ui/separator";
 import { LoadingSpinner, ErrorState } from "@/components/states";
 import { useAsync } from "@/hooks/use-async";
 import { useCatalog } from "@/hooks/use-catalog";
-import { fetchProductBySlug, fetchProducts } from "@/lib/api";
+import { fetchProductBySlug, fetchProducts, fetchProductVariants } from "@/lib/api";
 import { useCart } from "@/store/cart";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/context/currency";
+
+const LOW_STOCK = 5;
 
 export default function ProductPage() {
   const { slug = "" } = useParams();
@@ -33,12 +36,30 @@ export default function ProductPage() {
   const { format } = useCurrency();
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
-  const [size, setSize] = useState<"single" | "double">("single");
+  const [variantId, setVariantId] = useState<string | null>(null);
 
   const { data: product, loading, error, refetch } = useAsync(
     () => fetchProductBySlug(slug),
     [slug],
   );
+
+  // Variants for this product (empty = sold with the product's own price/stock).
+  const variantsState = useAsync(
+    () => (product?.id ? fetchProductVariants(product.id) : Promise.resolve([])),
+    [product?.id],
+  );
+  const variants = useMemo(() => variantsState.data ?? [], [variantsState.data]);
+
+  // Default the selection to the first in-stock variant (or the first).
+  useEffect(() => {
+    if (variants.length === 0) {
+      setVariantId(null);
+      return;
+    }
+    const inStock = variants.find((v) => v.stock > 0);
+    setVariantId((inStock ?? variants[0]).id);
+    setQty(1);
+  }, [variants]);
 
   const category = useMemo(
     () => flat.find((c) => c.id === product?.category_id),
@@ -76,27 +97,33 @@ export default function ProductPage() {
 
   const images =
     product.images && product.images.length > 0 ? product.images : [null];
+  const hasVariants = variants.length > 0;
+  const activeVariant = hasVariants
+    ? variants.find((v) => v.id === variantId) ?? variants[0]
+    : null;
+
+  // Active price / stock come from the selected variant, or the product itself.
+  const activePrice = activeVariant ? activeVariant.price : product.price;
+  const activeStock = activeVariant ? activeVariant.stock : product.stock;
+  const outOfStock = activeStock <= 0;
+  const lowStock = !outOfStock && activeStock <= LOW_STOCK;
+
   const onSale =
+    !hasVariants &&
     product.compare_at_price != null &&
     product.compare_at_price > product.price;
-  const needsSizeSelection = !!category && category.slug.includes("sheet");
-  const selectedVariant = needsSizeSelection
-    ? size === "single"
-      ? "Single"
-      : "Double"
-    : undefined;
+
+  const selectedVariantName = activeVariant?.name;
   const whatsappUrl = `https://wa.me/923054788662?text=${encodeURIComponent(
-    `Hi Bedding World, I want to order ${product.name}${selectedVariant ? ` (${selectedVariant})` : ""}.`,
+    `Hi Bedding World, I want to order ${product.name}${
+      selectedVariantName ? ` (${selectedVariantName})` : ""
+    }.`,
   )}`;
 
-  // Build breadcrumb trail from the deepest known ancestor down.
   const topCat = grandparent ?? parent ?? category;
   const midCat = grandparent ? parent : category?.parent_id ? parent : undefined;
   const crumbs = [
-    topCat && {
-      label: topCat.name,
-      to: `/category/${topCat.slug}`,
-    },
+    topCat && { label: topCat.name, to: `/category/${topCat.slug}` },
     midCat &&
       topCat && {
         label: midCat.name,
@@ -105,26 +132,37 @@ export default function ProductPage() {
     { label: product.name },
   ].filter(Boolean) as { label: string; to?: string }[];
 
+  const selectVariant = (id: string) => {
+    setVariantId(id);
+    setQty(1);
+  };
+
+  const changeQty = (delta: number) =>
+    setQty((q) => Math.min(Math.max(1, q + delta), Math.max(1, activeStock)));
+
   const handleAdd = () => {
+    if (outOfStock) return;
     addItem(
       {
         id: product.id,
         name: product.name,
         slug: product.slug,
-        price: product.price,
+        price: activePrice,
         image: product.images?.[0] ?? null,
-        variant: selectedVariant,
+        variant: selectedVariantName,
+        variantId: activeVariant?.id,
+        maxStock: activeStock,
       },
       qty,
     );
     toast.success("Added to cart", {
-      description: `${qty} × ${product.name}${selectedVariant ? ` • ${selectedVariant}` : ""}`,
+      description: `${qty} × ${product.name}${
+        selectedVariantName ? ` • ${selectedVariantName}` : ""
+      }`,
     });
   };
 
-  const relatedProducts = (related.data ?? []).filter(
-    (p) => p.id !== product.id,
-  );
+  const relatedProducts = (related.data ?? []).filter((p) => p.id !== product.id);
 
   return (
     <>
@@ -176,6 +214,11 @@ export default function ProductPage() {
                 Sale
               </Badge>
             )}
+            {outOfStock && (
+              <Badge className="absolute left-4 top-4 bg-foreground/80">
+                Out of Stock
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -198,9 +241,7 @@ export default function ProductPage() {
           </h1>
 
           <div className="mt-4 flex items-baseline gap-3">
-            <span className="font-display text-2xl">
-              {format(product.price)}
-            </span>
+            <span className="font-display text-2xl">{format(activePrice)}</span>
             {onSale && (
               <span className="text-lg text-muted-foreground line-through">
                 {format(product.compare_at_price!)}
@@ -214,34 +255,65 @@ export default function ProductPage() {
             </p>
           )}
 
-          {needsSizeSelection && (
+          {/* Variant / size selector — only enabled options are shown */}
+          {hasVariants && (
             <div className="mt-6">
-              <p className="text-sm font-medium">Choose size</p>
-              <div className="mt-3 inline-flex rounded-lg border border-border bg-secondary/40 p-1">
-                {[
-                  { key: "single", label: "Single" },
-                  { key: "double", label: "Double" },
-                ].map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    onClick={() => setSize(option.key as "single" | "double")}
-                    className={cn(
-                      "rounded-md px-4 py-2 text-sm font-medium transition-colors",
-                      size === option.key
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Available for bed sheet styles.
+              <p className="text-sm font-medium">
+                Size:{" "}
+                <span className="text-muted-foreground">
+                  {selectedVariantName}
+                </span>
               </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {variants.map((v) => {
+                  const selected = v.id === activeVariant?.id;
+                  const soldOut = v.stock <= 0;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => selectVariant(v.id)}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-md border px-4 py-2.5 text-sm font-medium transition-colors",
+                        selected
+                          ? "border-clay bg-clay/5 text-foreground"
+                          : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground",
+                        soldOut && "opacity-60",
+                      )}
+                    >
+                      {selected && <Check className="h-3.5 w-3.5 text-clay" />}
+                      {v.name}
+                      {soldOut && (
+                        <span className="text-xs text-muted-foreground">
+                          · Out
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
+
+          {/* Stock status */}
+          <div className="mt-5 text-sm">
+            {outOfStock ? (
+              <span className="inline-flex items-center gap-2 font-medium text-destructive">
+                <span className="h-2 w-2 rounded-full bg-destructive" />
+                Out of Stock
+              </span>
+            ) : lowStock ? (
+              <span className="inline-flex items-center gap-2 font-medium text-clay">
+                <span className="h-2 w-2 rounded-full bg-clay" />
+                Only {activeStock} {activeStock === 1 ? "piece" : "pieces"} left
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 font-medium text-emerald-700">
+                <span className="h-2 w-2 rounded-full bg-emerald-600" />
+                In Stock · {activeStock} available
+              </span>
+            )}
+          </div>
 
           <Separator className="my-8" />
 
@@ -249,9 +321,9 @@ export default function ProductPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="flex items-center rounded-md border border-border">
               <button
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                onClick={() => changeQty(-1)}
                 className="flex h-12 w-12 items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
-                disabled={qty <= 1}
+                disabled={qty <= 1 || outOfStock}
                 aria-label="Decrease quantity"
               >
                 <Minus className="h-4 w-4" />
@@ -260,17 +332,25 @@ export default function ProductPage() {
                 {qty}
               </span>
               <button
-                onClick={() => setQty((q) => q + 1)}
-                className="flex h-12 w-12 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                onClick={() => changeQty(1)}
+                className="flex h-12 w-12 items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
+                disabled={outOfStock || qty >= activeStock}
                 aria-label="Increase quantity"
               >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
 
-            <Button size="lg" className="flex-1" onClick={handleAdd}>
+            <Button
+              size="lg"
+              className="flex-1"
+              onClick={handleAdd}
+              disabled={outOfStock}
+            >
               <ShoppingBag className="h-4 w-4" />
-              Add to Cart · {format(product.price * qty)}
+              {outOfStock
+                ? "Out of Stock"
+                : `Add to Cart · ${format(activePrice * qty)}`}
             </Button>
             <Button asChild variant="outline" size="lg" className="sm:min-w-44">
               <a href={whatsappUrl} target="_blank" rel="noreferrer">
@@ -280,9 +360,9 @@ export default function ProductPage() {
             </Button>
           </div>
 
-          {product.stock <= 0 && (
-            <p className="mt-3 text-sm text-clay">
-              Currently made to order — ships within 2 weeks.
+          {qty >= activeStock && !outOfStock && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Maximum available quantity selected.
             </p>
           )}
 

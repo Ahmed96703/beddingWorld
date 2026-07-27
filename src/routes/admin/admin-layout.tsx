@@ -2,6 +2,8 @@ import { NavLink, Outlet, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
+  ShoppingCart,
+  Boxes,
   FolderTree,
   Users,
   Settings,
@@ -16,6 +18,8 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, end: true },
   { to: "/admin/products", label: "Products", icon: Package, end: false },
+  { to: "/admin/orders", label: "Orders", icon: ShoppingCart, end: false },
+  { to: "/admin/inventory", label: "Inventory", icon: Boxes, end: false },
   { to: "/admin/categories", label: "Categories", icon: FolderTree, end: false },
   { to: "/admin/team", label: "Team & Admins", icon: Users, end: false },
   { to: "/admin/settings", label: "Settings", icon: Settings, end: false },

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Upload, X, Star } from "lucide-react";
+import { Loader2, Upload, X, Star, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -25,10 +25,27 @@ import {
   createProduct,
   updateProduct,
   uploadProductImage,
+  fetchProductVariants,
+  saveProductVariants,
 } from "@/lib/api";
 import type { CategoryRow, ProductRow } from "@/integrations/supabase/types";
-import { slugify } from "@/lib/utils";
+import { slugify, cn } from "@/lib/utils";
 import { useCurrency } from "@/context/currency";
+
+/** A row in the admin "Product Variations" editor. */
+interface VariantDraft {
+  key: string; // stable variant_key, e.g. "single"
+  name: string; // label shown to customers, e.g. "Single"
+  enabled: boolean;
+  price: string;
+  stock: string;
+  fixed?: boolean; // Single/Double can't be renamed/removed
+}
+
+const defaultVariants = (): VariantDraft[] => [
+  { key: "single", name: "Single", enabled: false, price: "", stock: "0", fixed: true },
+  { key: "double", name: "Double", enabled: false, price: "", stock: "0", fixed: true },
+];
 
 interface ProductFormProps {
   open: boolean;
@@ -72,6 +89,7 @@ export function ProductForm({
   categories,
 }: ProductFormProps) {
   const [draft, setDraft] = useState<Draft>(EMPTY);
+  const [variants, setVariants] = useState<VariantDraft[]>(defaultVariants);
   const { baseCode } = useCurrency();
   const [slugTouched, setSlugTouched] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -96,6 +114,42 @@ export function ProductForm({
       setDraft(EMPTY);
       setSlugTouched(false);
     }
+  }, [product, open]);
+
+  // Load existing variants when editing; reset to defaults for a new product.
+  useEffect(() => {
+    let active = true;
+    if (product && open) {
+      fetchProductVariants(product.id)
+        .then((rows) => {
+          if (!active) return;
+          const base = defaultVariants();
+          const extras: VariantDraft[] = [];
+          for (const r of rows) {
+            const existing = base.find((b) => b.key === r.variant_key);
+            if (existing) {
+              existing.enabled = true;
+              existing.price = String(r.price);
+              existing.stock = String(r.stock);
+            } else {
+              extras.push({
+                key: r.variant_key,
+                name: r.name,
+                enabled: true,
+                price: String(r.price),
+                stock: String(r.stock),
+              });
+            }
+          }
+          setVariants([...base, ...extras]);
+        })
+        .catch(() => active && setVariants(defaultVariants()));
+    } else if (open) {
+      setVariants(defaultVariants());
+    }
+    return () => {
+      active = false;
+    };
   }, [product, open]);
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
@@ -152,13 +206,23 @@ export function ProductForm({
       images: draft.images,
     };
     try {
-      if (product) {
-        await updateProduct(product.id, payload);
-        toast.success("Product updated");
-      } else {
-        await createProduct(payload);
-        toast.success("Product created");
-      }
+      const saved = product
+        ? await updateProduct(product.id, payload)
+        : await createProduct(payload);
+
+      // Persist the enabled variations (empty = product uses its own price/stock).
+      const enabled = variants
+        .filter((v) => v.enabled)
+        .map((v, i) => ({
+          name: v.name.trim() || v.key,
+          variant_key: v.key,
+          price: Number(v.price) || 0,
+          stock: Number(v.stock) || 0,
+          sort_order: i,
+        }));
+      await saveProductVariants(saved.id, enabled);
+
+      toast.success(product ? "Product updated" : "Product created");
       onSaved();
       onClose();
     } catch (err) {
@@ -316,6 +380,136 @@ export function ProductForm({
               Uploaded to the <code>product-images</code> bucket. The first
               image is used as the main thumbnail.
             </p>
+          </div>
+
+          {/* Product Variations (Single / Double / …) */}
+          <div>
+            <Label className="mb-1 block">Product Variations (optional)</Label>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Enable sizes to sell this product per-size with a separate price &
+              stock. If none are enabled, the base Price & Stock above are used.
+            </p>
+            <div className="space-y-3">
+              {variants.map((v, i) => (
+                <div
+                  key={v.key + i}
+                  className={cn(
+                    "rounded-lg border p-4 transition-colors",
+                    v.enabled ? "border-clay/40 bg-clay/5" : "border-border",
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={v.enabled}
+                        onCheckedChange={(c) =>
+                          setVariants((list) =>
+                            list.map((x, idx) =>
+                              idx === i ? { ...x, enabled: c } : x,
+                            ),
+                          )
+                        }
+                      />
+                      {v.fixed ? (
+                        <span className="font-medium">{v.name}</span>
+                      ) : (
+                        <Input
+                          value={v.name}
+                          onChange={(e) =>
+                            setVariants((list) =>
+                              list.map((x, idx) =>
+                                idx === i
+                                  ? {
+                                      ...x,
+                                      name: e.target.value,
+                                      key: slugify(e.target.value) || x.key,
+                                    }
+                                  : x,
+                              ),
+                            )
+                          }
+                          placeholder="Size name (e.g. King)"
+                          className="h-9 w-44"
+                        />
+                      )}
+                    </div>
+                    {!v.fixed && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVariants((list) => list.filter((_, idx) => idx !== i))
+                        }
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label="Remove variation"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {v.enabled && (
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="mb-1.5 block text-xs">
+                          Price ({baseCode})
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={v.price}
+                          onChange={(e) =>
+                            setVariants((list) =>
+                              list.map((x, idx) =>
+                                idx === i ? { ...x, price: e.target.value } : x,
+                              ),
+                            )
+                          }
+                          placeholder="2500"
+                        />
+                      </div>
+                      <div>
+                        <Label className="mb-1.5 block text-xs">Stock</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={v.stock}
+                          onChange={(e) =>
+                            setVariants((list) =>
+                              list.map((x, idx) =>
+                                idx === i ? { ...x, stock: e.target.value } : x,
+                              ),
+                            )
+                          }
+                          placeholder="10"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() =>
+                setVariants((list) => [
+                  ...list,
+                  {
+                    key: `variant-${list.length + 1}`,
+                    name: "",
+                    enabled: true,
+                    price: "",
+                    stock: "0",
+                  },
+                ])
+              }
+            >
+              <Plus className="h-4 w-4" />
+              Add another size
+            </Button>
           </div>
 
           {/* Toggles */}
