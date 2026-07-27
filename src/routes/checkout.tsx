@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useCart, selectSubtotal } from "@/store/cart";
 import { estimatedDelivery, normalizeError } from "@/lib/utils";
 import { placeOrder as placeOrderApi } from "@/lib/api";
+import { sendOrderEmail } from "@/lib/notify";
 import { useCurrency } from "@/context/currency";
 import { shippingFor, saveLastOrder, type PlacedOrder } from "@/lib/order";
 import { useStoreSettings } from "@/hooks/use-settings";
@@ -110,6 +111,8 @@ export default function CheckoutPage() {
       };
 
       saveLastOrder(order);
+      // Fire-and-forget: email the admin that a new order arrived.
+      void sendOrderEmail(order, format);
       clear();
       navigate("/order/success", { replace: true });
     } catch (err) {
