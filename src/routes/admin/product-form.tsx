@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2, Upload, X, Star, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -13,13 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ProductImage } from "@/components/product-image";
 import {
   createProduct,
@@ -27,6 +20,8 @@ import {
   uploadProductImage,
   fetchProductVariants,
   saveProductVariants,
+  fetchProductCategories,
+  saveProductCategories,
 } from "@/lib/api";
 import type { CategoryRow, ProductRow } from "@/integrations/supabase/types";
 import { slugify, cn } from "@/lib/utils";
@@ -61,7 +56,7 @@ interface Draft {
   description: string;
   price: string;
   compareAt: string;
-  categoryId: string;
+  categoryIds: string[];
   stock: string;
   status: "live" | "draft";
   featured: boolean;
@@ -74,7 +69,7 @@ const EMPTY: Draft = {
   description: "",
   price: "",
   compareAt: "",
-  categoryId: "",
+  categoryIds: [],
   stock: "0",
   status: "draft",
   featured: false,
@@ -95,6 +90,37 @@ export function ProductForm({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  // Categories flattened into tree order with a depth, for an indented list.
+  const orderedCategories = useMemo(() => {
+    const byParent = new Map<string | null, CategoryRow[]>();
+    for (const c of categories) {
+      const key = c.parent_id ?? null;
+      const list = byParent.get(key) ?? [];
+      list.push(c);
+      byParent.set(key, list);
+    }
+    const out: { cat: CategoryRow; depth: number }[] = [];
+    const walk = (parent: string | null, depth: number) => {
+      const kids = (byParent.get(parent) ?? [])
+        .slice()
+        .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+      for (const c of kids) {
+        out.push({ cat: c, depth });
+        walk(c.id, depth + 1);
+      }
+    };
+    walk(null, 0);
+    return out;
+  }, [categories]);
+
+  const toggleCategory = (id: string) =>
+    setDraft((d) => ({
+      ...d,
+      categoryIds: d.categoryIds.includes(id)
+        ? d.categoryIds.filter((x) => x !== id)
+        : [...d.categoryIds, id],
+    }));
+
   useEffect(() => {
     if (product) {
       setDraft({
@@ -103,7 +129,7 @@ export function ProductForm({
         description: product.description ?? "",
         price: String(product.price),
         compareAt: product.compare_at_price?.toString() ?? "",
-        categoryId: product.category_id ?? "",
+        categoryIds: product.category_id ? [product.category_id] : [],
         stock: String(product.stock),
         status: product.status,
         featured: product.featured,
@@ -114,6 +140,22 @@ export function ProductForm({
       setDraft(EMPTY);
       setSlugTouched(false);
     }
+  }, [product, open]);
+
+  // Load the product's full category list (many-to-many) when editing.
+  useEffect(() => {
+    let active = true;
+    if (product && open) {
+      fetchProductCategories(product.id)
+        .then((ids) => {
+          if (active && ids.length)
+            setDraft((d) => ({ ...d, categoryIds: ids }));
+        })
+        .catch(() => {});
+    }
+    return () => {
+      active = false;
+    };
   }, [product, open]);
 
   // Load existing variants when editing; reset to defaults for a new product.
@@ -199,7 +241,7 @@ export function ProductForm({
       description: draft.description.trim() || null,
       price,
       compare_at_price: draft.compareAt ? Number(draft.compareAt) : null,
-      category_id: draft.categoryId || null,
+      category_id: draft.categoryIds[0] ?? null,
       stock: Number(draft.stock) || 0,
       status: draft.status,
       featured: draft.featured,
@@ -221,6 +263,7 @@ export function ProductForm({
           sort_order: i,
         }));
       await saveProductVariants(saved.id, enabled);
+      await saveProductCategories(saved.id, draft.categoryIds);
 
       toast.success(product ? "Product updated" : "Product created");
       onSaved();
@@ -295,27 +338,45 @@ export function ProductForm({
               />
             </div>
 
-            <div>
-              <Label className="mb-2 block">Category</Label>
-              <Select
-                value={draft.categoryId || "none"}
-                onValueChange={(v) => set("categoryId", v === "none" ? "" : v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Uncategorized</SelectItem>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="sm:col-span-2">
+              <Label className="mb-2 block">Categories</Label>
+              <div className="max-h-52 space-y-0.5 overflow-y-auto rounded-md border border-border p-2">
+                {orderedCategories.length === 0 && (
+                  <p className="p-2 text-sm text-muted-foreground">
+                    No categories yet.
+                  </p>
+                )}
+                {orderedCategories.map(({ cat, depth }) => {
+                  const checked = draft.categoryIds.includes(cat.id);
+                  return (
+                    <label
+                      key={cat.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-secondary",
+                        checked && "bg-secondary/60",
+                      )}
+                      style={{ paddingLeft: `${0.5 + depth * 1}rem` }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleCategory(cat.id)}
+                        className="h-4 w-4 accent-clay"
+                      />
+                      <span className={depth === 0 ? "font-medium" : ""}>
+                        {cat.name}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Select one or more — the product appears in every selected
+                category.
+              </p>
             </div>
             <div>
-              <Label className="mb-2 block">Stock</Label>
+              <Label className="mb-2 block">Stock (no variations)</Label>
               <Input
                 type="number"
                 min="0"

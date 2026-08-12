@@ -144,10 +144,71 @@ export interface ProductQuery {
   limit?: number;
 }
 
+function applyClientFilters(
+  input: ProductRow[],
+  query: ProductQuery,
+): ProductRow[] {
+  let list = input.slice();
+  if (query.status && query.status !== "all") {
+    list = list.filter((p) => p.status === query.status);
+  } else if (!query.status) {
+    list = list.filter((p) => p.status === "live");
+  }
+  if (query.featured) list = list.filter((p) => p.featured);
+  if (query.search) {
+    const s = query.search.toLowerCase();
+    list = list.filter(
+      (p) =>
+        p.name.toLowerCase().includes(s) ||
+        (p.description ?? "").toLowerCase().includes(s),
+    );
+  }
+  switch (query.sort) {
+    case "price-asc":
+      list.sort((a, b) => a.price - b.price);
+      break;
+    case "price-desc":
+      list.sort((a, b) => b.price - a.price);
+      break;
+    case "name":
+      list.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    default:
+      list.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }
+  return query.limit ? list.slice(0, query.limit) : list;
+}
+
+/** Products belonging to ANY of the given categories (via the pivot table). */
+async function fetchProductsByCategories(
+  query: ProductQuery,
+): Promise<ProductRow[]> {
+  const { data, error } = await supabase
+    .from("product_categories")
+    .select("product:products(*)")
+    .in("category_id", query.categoryIds!);
+  if (error) throw error;
+  const rows = ((data ?? []) as unknown as { product: ProductRow | null }[])
+    .map((r) => r.product)
+    .filter((p): p is ProductRow => !!p);
+  // A product can be in several of the requested categories — de-duplicate.
+  const seen = new Set<string>();
+  const unique = rows.filter((p) =>
+    seen.has(p.id) ? false : (seen.add(p.id), true),
+  );
+  return applyClientFilters(unique, query);
+}
+
 export async function fetchProducts(
   query: ProductQuery = {},
 ): Promise<ProductRow[]> {
   if (!isSupabaseConfigured) return demo(filterDemoProducts(query));
+
+  // Category listing uses the many-to-many pivot (a product can be in many).
+  if (query.categoryIds && query.categoryIds.length > 0) {
+    return fetchProductsByCategories(query);
+  }
+
   let q = supabase.from("products").select("*");
 
   if (query.status && query.status !== "all") {
@@ -157,9 +218,6 @@ export async function fetchProducts(
   }
 
   if (query.featured) q = q.eq("featured", true);
-  if (query.categoryIds && query.categoryIds.length > 0) {
-    q = q.in("category_id", query.categoryIds);
-  }
   if (query.search) {
     q = q.or(`name.ilike.%${query.search}%,description.ilike.%${query.search}%`);
   }
@@ -183,6 +241,42 @@ export async function fetchProducts(
   const { data, error } = await q;
   if (error) throw error;
   return data ?? [];
+}
+
+/** Category ids a product is assigned to (many-to-many). */
+export async function fetchProductCategories(
+  productId: string,
+): Promise<string[]> {
+  if (!isSupabaseConfigured) {
+    const p = demoProducts().find((x) => x.id === productId);
+    return demo(p?.category_id ? [p.category_id] : []);
+  }
+  const { data, error } = await supabase
+    .from("product_categories")
+    .select("category_id")
+    .eq("product_id", productId);
+  if (error) throw error;
+  return (data ?? []).map((r) => r.category_id);
+}
+
+/** Replace a product's category assignments (delete-then-insert the pivot). */
+export async function saveProductCategories(
+  productId: string,
+  categoryIds: string[],
+): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  const del = await supabase
+    .from("product_categories")
+    .delete()
+    .eq("product_id", productId);
+  if (del.error) throw del.error;
+  if (categoryIds.length === 0) return;
+  const rows = categoryIds.map((category_id) => ({
+    product_id: productId,
+    category_id,
+  }));
+  const { error } = await supabase.from("product_categories").insert(rows);
+  if (error) throw error;
 }
 
 export async function fetchProductBySlug(
@@ -508,14 +602,28 @@ export async function placeOrder(
   return data as PlaceOrderResult;
 }
 
-export async function fetchOrders(): Promise<OrderRow[]> {
+export async function fetchOrders(archived = false): Promise<OrderRow[]> {
   if (!isSupabaseConfigured) return demo([]);
   const { data, error } = await supabase
     .from("orders")
     .select("*")
+    .eq("archived", archived)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data ?? [];
+}
+
+/** Archive (move to history) or restore an order. */
+export async function setOrderArchived(
+  id: string,
+  archived: boolean,
+): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  const { error } = await supabase.rpc("set_order_archived", {
+    _order_id: id,
+    _archived: archived,
+  });
+  if (error) throw error;
 }
 
 export async function fetchOrder(id: string): Promise<OrderWithItems | null> {

@@ -50,6 +50,12 @@ export interface Database {
         Update: Partial<OrderItemRow>;
         Relationships: [];
       };
+      product_categories: {
+        Row: ProductCategoryRow;
+        Insert: ProductCategoryRow;
+        Update: Partial<ProductCategoryRow>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -75,6 +81,10 @@ export interface Database {
       };
       set_order_status: {
         Args: { _order_id: string; _status: OrderStatus };
+        Returns: undefined;
+      };
+      set_order_archived: {
+        Args: { _order_id: string; _archived: boolean };
         Returns: undefined;
       };
       get_inventory_report: {
@@ -213,8 +223,14 @@ export type OrderRow = {
   total: number;
   payment_method: string;
   status: OrderStatus;
+  archived: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type ProductCategoryRow = {
+  product_id: string;
+  category_id: string;
 };
 
 export type OrderItemRow = {

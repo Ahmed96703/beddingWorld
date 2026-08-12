@@ -117,51 +117,66 @@ export default function AdminProducts() {
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-border bg-card">
-          {/* Header row (desktop) */}
-          <div className="hidden grid-cols-[1fr_8rem_6rem_6rem_5rem] gap-4 border-b border-border px-5 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground md:grid">
-            <span>Product</span>
-            <span>Category</span>
-            <span>Price</span>
-            <span>Status</span>
-            <span className="text-right">Actions</span>
+          {/* Header (desktop) */}
+          <div className="hidden items-center gap-4 border-b border-border px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground md:flex">
+            <span className="flex-1">Product</span>
+            <span className="w-28 shrink-0">Category</span>
+            <span className="w-24 shrink-0">Price</span>
+            <span className="w-16 shrink-0">Status</span>
+            <span className="w-16 shrink-0 text-right">Actions</span>
           </div>
 
           <ul className="divide-y divide-border">
             {filtered.map((p) => (
               <li
                 key={p.id}
-                className="grid grid-cols-1 gap-3 px-5 py-4 transition-colors hover:bg-secondary/40 md:grid-cols-[1fr_8rem_6rem_6rem_5rem] md:items-center md:gap-4"
+                className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/40"
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded bg-secondary">
-                    <ProductImage src={p.images?.[0]} alt={p.name} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-1.5 truncate font-medium">
-                      {p.name}
-                      {p.featured && (
-                        <Star className="h-3.5 w-3.5 shrink-0 fill-clay text-clay" />
-                      )}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      /{p.slug}
-                    </p>
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded bg-secondary">
+                  <ProductImage src={p.images?.[0]} alt={p.name} />
+                </div>
+
+                {/* Name + slug — flexes and clamps so the row never stretches */}
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-start gap-1.5 text-sm font-medium leading-snug">
+                    <span className="line-clamp-2">{p.name}</span>
+                    {p.featured && (
+                      <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-clay text-clay" />
+                    )}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    /{p.slug}
+                  </p>
+                  {/* Mobile-only meta */}
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground md:hidden">
+                    <span className="max-w-[9rem] truncate">
+                      {categoryName(p.category_id)}
+                    </span>
+                    <span aria-hidden>·</span>
+                    <span className="font-medium text-foreground">
+                      {formatBase(p.price)}
+                    </span>
+                    <Badge variant={p.status === "live" ? "live" : "draft"}>
+                      {p.status}
+                    </Badge>
                   </div>
                 </div>
 
-                <span className="text-sm text-muted-foreground">
+                {/* Fixed-width desktop columns */}
+                <span className="hidden w-28 shrink-0 truncate text-sm text-muted-foreground md:block">
                   {categoryName(p.category_id)}
                 </span>
-                <span className="text-sm font-medium">
+                <span className="hidden w-24 shrink-0 truncate text-sm font-medium md:block">
                   {formatBase(p.price)}
                 </span>
-                <span>
+                <span className="hidden w-16 shrink-0 md:block">
                   <Badge variant={p.status === "live" ? "live" : "draft"}>
                     {p.status}
                   </Badge>
                 </span>
 
-                <div className="flex items-center gap-1 md:justify-end">
+                {/* Actions — always visible, fixed on the right */}
+                <div className="flex shrink-0 items-center justify-end gap-1 md:w-16">
                   <Button
                     variant="ghost"
                     size="icon"

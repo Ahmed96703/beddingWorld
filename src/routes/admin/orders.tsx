@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Loader2, Phone, MapPin, PackageOpen } from "lucide-react";
+import { Loader2, Phone, MapPin, PackageOpen, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -18,10 +19,15 @@ import {
 } from "@/components/ui/dialog";
 import { ErrorState, EmptyState } from "@/components/states";
 import { useAsync } from "@/hooks/use-async";
-import { fetchOrders, fetchOrder, setOrderStatus } from "@/lib/api";
+import {
+  fetchOrders,
+  fetchOrder,
+  setOrderStatus,
+  setOrderArchived,
+} from "@/lib/api";
 import type { OrderStatus, OrderWithItems } from "@/integrations/supabase/types";
 import { useCurrency } from "@/context/currency";
-import { normalizeError } from "@/lib/utils";
+import { normalizeError, cn } from "@/lib/utils";
 
 const STATUSES: { value: OrderStatus; label: string }[] = [
   { value: "received", label: "Order Received" },
@@ -47,9 +53,23 @@ function StatusBadge({ status }: { status: OrderStatus }) {
 }
 
 export default function AdminOrders() {
-  const orders = useAsync(fetchOrders, []);
+  const [tab, setTab] = useState<"active" | "archived">("active");
+  const orders = useAsync(() => fetchOrders(tab === "archived"), [tab]);
   const { format } = useCurrency();
   const [openId, setOpenId] = useState<string | null>(null);
+
+  const restore = async (id: string) => {
+    try {
+      await setOrderArchived(id, false);
+      toast.success("Order restored to Active");
+      setOpenId(null);
+      orders.refetch();
+    } catch (err) {
+      toast.error("Could not restore", {
+        description: normalizeError(err).message,
+      });
+    }
+  };
 
   const detail = useAsync<OrderWithItems | null>(
     () => (openId ? fetchOrder(openId) : Promise.resolve(null)),
@@ -83,6 +103,27 @@ export default function AdminOrders() {
         <h1 className="mt-1 font-display text-3xl">Orders</h1>
       </header>
 
+      {/* Active / Archived tabs */}
+      <div className="inline-flex rounded-lg border border-border bg-secondary/40 p-1">
+        {([
+          { key: "active", label: "Active Orders" },
+          { key: "archived", label: "Order History" },
+        ] as const).map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={cn(
+              "rounded-md px-4 py-2 text-sm font-medium transition-colors",
+              tab === t.key
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {orders.error ? (
         <ErrorState error={orders.error} onRetry={orders.refetch} />
       ) : orders.loading ? (
@@ -94,8 +135,12 @@ export default function AdminOrders() {
       ) : (orders.data ?? []).length === 0 ? (
         <EmptyState
           icon={PackageOpen}
-          title="No orders yet"
-          message="COD orders placed on the storefront will appear here."
+          title={tab === "archived" ? "No archived orders" : "No orders yet"}
+          message={
+            tab === "archived"
+              ? "Delivered and cancelled orders move here automatically."
+              : "COD orders placed on the storefront will appear here."
+          }
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -172,9 +217,20 @@ export default function AdminOrders() {
                   )}
                 </div>
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  Setting “Cancelled” automatically returns the stock to
-                  inventory.
+                  Delivered / Cancelled orders move to History automatically.
+                  Setting “Cancelled” returns the stock to inventory.
                 </p>
+                {detail.data.archived && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => restore(detail.data!.id)}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Restore to Active
+                  </Button>
+                )}
               </div>
 
               {/* Customer */}
